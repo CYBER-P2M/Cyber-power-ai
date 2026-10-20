@@ -1,0 +1,15 @@
+Open blade disconnect switch
+Closed blade disconnect switch
+Open tandem disconnect switch
+Closed tandem disconnect switch
+Breaker
+Fuse disconnect switch
+Glass disc insulator
+Porcelain pin insulator
+Muffle
+Lightning arrester
+Recloser
+Power transformer
+Current transformer
+Potential transformer
+Tripolar disconnect switch

@@ -1,0 +1,4 @@
+asset_id,station_id,asset_type,label,manufacturer,model,serial_number,installation_date,expected_lifetime_years,status
+TR-01,SS-001,power_transformer,Main Transformer 1,ABB,ONAN 220/66,SN-88122,2012-05-15,30,in_service
+CB-04,SS-001,circuit_breaker,Feeder Breaker 4,ABB,VD4,SN-45210,2011-02-01,25,in_service
+BAT-01,SS-001,battery_bank,DC Battery Bank 1,,,FB-3301,2017-09-20,10,in_service

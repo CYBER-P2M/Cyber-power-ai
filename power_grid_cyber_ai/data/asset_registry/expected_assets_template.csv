@@ -1,0 +1,7 @@
+station_id,asset_type,expected_count
+SS-001,power_transformer,2
+SS-001,circuit_breaker,8
+SS-001,disconnect_switch,12
+SS-001,current_transformer,6
+SS-001,voltage_transformer,6
+SS-001,surge_arrester,8
