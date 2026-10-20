@@ -1,0 +1,35 @@
+{
+  "dataset_file": "D:\\file power\\file all\\new\\power_grid_cyber_ai\\data\\selected\\final_verified_multiclass.csv",
+  "target": "label",
+  "classes": [
+    "Attack",
+    "Fault",
+    "Normal"
+  ],
+  "train_rows": 29892,
+  "test_rows": 7473,
+  "features": 126,
+  "removed_columns": [
+    "marker",
+    "source_file"
+  ],
+  "dropped_missing_columns": [],
+  "random_state": 42,
+  "test_size": 0.2,
+  "rf_selected_candidate": "baseline",
+  "rf_selected_spec": {
+    "max_features": "sqrt",
+    "min_samples_leaf": 1,
+    "class_weight": "balanced"
+  },
+  "rf_selected_params": {
+    "max_features": "sqrt",
+    "min_samples_leaf": 1,
+    "class_weight": "balanced"
+  },
+  "rf_n_estimators": 500,
+  "validation_size_within_training": 0.2,
+  "split_strategy": "stratified_random_rows_not_grouped",
+  "selection_rule": "Require both critical errors, attack_as_normal, normal_as_attack not to increase and macro_f1 not to decrease on validation. Require strict reduction of at least one critical error; rank by critical_rate_sum then macro_f1. Otherwise retain baseline.",
+  "validation_improvement_found": false
+}
