@@ -1,0 +1,645 @@
+{
+ "_note": "Meanings inferred from the MSU/ORNL naming convention. Units intentionally omitted. Verify against the dataset documentation.",
+ "features": {
+  "R1-PA1:VH": {
+   "meaning": "Phase A voltage phase angle (relay/PMU R1)",
+   "kind": "voltage_angle",
+   "sequence": false
+  },
+  "R1-PM1:V": {
+   "meaning": "Phase A voltage magnitude (relay/PMU R1)",
+   "kind": "voltage_magnitude",
+   "sequence": false
+  },
+  "R1-PA2:VH": {
+   "meaning": "Phase B voltage phase angle (relay/PMU R1)",
+   "kind": "voltage_angle",
+   "sequence": false
+  },
+  "R1-PM2:V": {
+   "meaning": "Phase B voltage magnitude (relay/PMU R1)",
+   "kind": "voltage_magnitude",
+   "sequence": false
+  },
+  "R1-PA3:VH": {
+   "meaning": "Phase C voltage phase angle (relay/PMU R1)",
+   "kind": "voltage_angle",
+   "sequence": false
+  },
+  "R1-PM3:V": {
+   "meaning": "Phase C voltage magnitude (relay/PMU R1)",
+   "kind": "voltage_magnitude",
+   "sequence": false
+  },
+  "R1-PA4:IH": {
+   "meaning": "Phase A current phase angle (relay/PMU R1)",
+   "kind": "current_angle",
+   "sequence": false
+  },
+  "R1-PM4:I": {
+   "meaning": "Phase A current magnitude (relay/PMU R1)",
+   "kind": "current_magnitude",
+   "sequence": false
+  },
+  "R1-PA5:IH": {
+   "meaning": "Phase B current phase angle (relay/PMU R1)",
+   "kind": "current_angle",
+   "sequence": false
+  },
+  "R1-PM5:I": {
+   "meaning": "Phase B current magnitude (relay/PMU R1)",
+   "kind": "current_magnitude",
+   "sequence": false
+  },
+  "R1-PA6:IH": {
+   "meaning": "Phase C current phase angle (relay/PMU R1)",
+   "kind": "current_angle",
+   "sequence": false
+  },
+  "R1-PM6:I": {
+   "meaning": "Phase C current magnitude (relay/PMU R1)",
+   "kind": "current_magnitude",
+   "sequence": false
+  },
+  "R1-PA7:VH": {
+   "meaning": "Positive-sequence voltage phase angle (relay/PMU R1)",
+   "kind": "voltage_angle",
+   "sequence": true
+  },
+  "R1-PM7:V": {
+   "meaning": "Positive-sequence voltage magnitude (relay/PMU R1)",
+   "kind": "voltage_magnitude",
+   "sequence": true
+  },
+  "R1-PA8:VH": {
+   "meaning": "Negative-sequence voltage phase angle (relay/PMU R1)",
+   "kind": "voltage_angle",
+   "sequence": true
+  },
+  "R1-PM8:V": {
+   "meaning": "Negative-sequence voltage magnitude (relay/PMU R1)",
+   "kind": "voltage_magnitude",
+   "sequence": true
+  },
+  "R1-PA9:VH": {
+   "meaning": "Zero-sequence voltage phase angle (relay/PMU R1)",
+   "kind": "voltage_angle",
+   "sequence": true
+  },
+  "R1-PM9:V": {
+   "meaning": "Zero-sequence voltage magnitude (relay/PMU R1)",
+   "kind": "voltage_magnitude",
+   "sequence": true
+  },
+  "R1-PA10:IH": {
+   "meaning": "Positive-sequence current phase angle (relay/PMU R1)",
+   "kind": "current_angle",
+   "sequence": true
+  },
+  "R1-PM10:I": {
+   "meaning": "Positive-sequence current magnitude (relay/PMU R1)",
+   "kind": "current_magnitude",
+   "sequence": true
+  },
+  "R1-PA11:IH": {
+   "meaning": "Negative-sequence current phase angle (relay/PMU R1)",
+   "kind": "current_angle",
+   "sequence": true
+  },
+  "R1-PM11:I": {
+   "meaning": "Negative-sequence current magnitude (relay/PMU R1)",
+   "kind": "current_magnitude",
+   "sequence": true
+  },
+  "R1-PA12:IH": {
+   "meaning": "Zero-sequence current phase angle (relay/PMU R1)",
+   "kind": "current_angle",
+   "sequence": true
+  },
+  "R1-PM12:I": {
+   "meaning": "Zero-sequence current magnitude (relay/PMU R1)",
+   "kind": "current_magnitude",
+   "sequence": true
+  },
+  "R1:F": {
+   "meaning": "Relay operating frequency (relay/PMU R1)",
+   "kind": "frequency",
+   "sequence": false
+  },
+  "R1:DF": {
+   "meaning": "Frequency deviation (delta) of the relay (relay/PMU R1)",
+   "kind": "frequency_delta",
+   "sequence": false
+  },
+  "R1-PA:Z": {
+   "meaning": "Apparent impedance seen by the relay (relay/PMU R1)",
+   "kind": "impedance",
+   "sequence": false
+  },
+  "R1-PA:ZH": {
+   "meaning": "Apparent impedance angle seen by the relay (relay/PMU R1)",
+   "kind": "impedance_angle",
+   "sequence": false
+  },
+  "R1:S": {
+   "meaning": "Relay status flag (relay/PMU R1)",
+   "kind": "relay_status",
+   "sequence": false
+  },
+  "R2-PA1:VH": {
+   "meaning": "Phase A voltage phase angle (relay/PMU R2)",
+   "kind": "voltage_angle",
+   "sequence": false
+  },
+  "R2-PM1:V": {
+   "meaning": "Phase A voltage magnitude (relay/PMU R2)",
+   "kind": "voltage_magnitude",
+   "sequence": false
+  },
+  "R2-PA2:VH": {
+   "meaning": "Phase B voltage phase angle (relay/PMU R2)",
+   "kind": "voltage_angle",
+   "sequence": false
+  },
+  "R2-PM2:V": {
+   "meaning": "Phase B voltage magnitude (relay/PMU R2)",
+   "kind": "voltage_magnitude",
+   "sequence": false
+  },
+  "R2-PA3:VH": {
+   "meaning": "Phase C voltage phase angle (relay/PMU R2)",
+   "kind": "voltage_angle",
+   "sequence": false
+  },
+  "R2-PM3:V": {
+   "meaning": "Phase C voltage magnitude (relay/PMU R2)",
+   "kind": "voltage_magnitude",
+   "sequence": false
+  },
+  "R2-PA4:IH": {
+   "meaning": "Phase A current phase angle (relay/PMU R2)",
+   "kind": "current_angle",
+   "sequence": false
+  },
+  "R2-PM4:I": {
+   "meaning": "Phase A current magnitude (relay/PMU R2)",
+   "kind": "current_magnitude",
+   "sequence": false
+  },
+  "R2-PA5:IH": {
+   "meaning": "Phase B current phase angle (relay/PMU R2)",
+   "kind": "current_angle",
+   "sequence": false
+  },
+  "R2-PM5:I": {
+   "meaning": "Phase B current magnitude (relay/PMU R2)",
+   "kind": "current_magnitude",
+   "sequence": false
+  },
+  "R2-PA6:IH": {
+   "meaning": "Phase C current phase angle (relay/PMU R2)",
+   "kind": "current_angle",
+   "sequence": false
+  },
+  "R2-PM6:I": {
+   "meaning": "Phase C current magnitude (relay/PMU R2)",
+   "kind": "current_magnitude",
+   "sequence": false
+  },
+  "R2-PA7:VH": {
+   "meaning": "Positive-sequence voltage phase angle (relay/PMU R2)",
+   "kind": "voltage_angle",
+   "sequence": true
+  },
+  "R2-PM7:V": {
+   "meaning": "Positive-sequence voltage magnitude (relay/PMU R2)",
+   "kind": "voltage_magnitude",
+   "sequence": true
+  },
+  "R2-PA8:VH": {
+   "meaning": "Negative-sequence voltage phase angle (relay/PMU R2)",
+   "kind": "voltage_angle",
+   "sequence": true
+  },
+  "R2-PM8:V": {
+   "meaning": "Negative-sequence voltage magnitude (relay/PMU R2)",
+   "kind": "voltage_magnitude",
+   "sequence": true
+  },
+  "R2-PA9:VH": {
+   "meaning": "Zero-sequence voltage phase angle (relay/PMU R2)",
+   "kind": "voltage_angle",
+   "sequence": true
+  },
+  "R2-PM9:V": {
+   "meaning": "Zero-sequence voltage magnitude (relay/PMU R2)",
+   "kind": "voltage_magnitude",
+   "sequence": true
+  },
+  "R2-PA10:IH": {
+   "meaning": "Positive-sequence current phase angle (relay/PMU R2)",
+   "kind": "current_angle",
+   "sequence": true
+  },
+  "R2-PM10:I": {
+   "meaning": "Positive-sequence current magnitude (relay/PMU R2)",
+   "kind": "current_magnitude",
+   "sequence": true
+  },
+  "R2-PA11:IH": {
+   "meaning": "Negative-sequence current phase angle (relay/PMU R2)",
+   "kind": "current_angle",
+   "sequence": true
+  },
+  "R2-PM11:I": {
+   "meaning": "Negative-sequence current magnitude (relay/PMU R2)",
+   "kind": "current_magnitude",
+   "sequence": true
+  },
+  "R2-PA12:IH": {
+   "meaning": "Zero-sequence current phase angle (relay/PMU R2)",
+   "kind": "current_angle",
+   "sequence": true
+  },
+  "R2-PM12:I": {
+   "meaning": "Zero-sequence current magnitude (relay/PMU R2)",
+   "kind": "current_magnitude",
+   "sequence": true
+  },
+  "R2:F": {
+   "meaning": "Relay operating frequency (relay/PMU R2)",
+   "kind": "frequency",
+   "sequence": false
+  },
+  "R2:DF": {
+   "meaning": "Frequency deviation (delta) of the relay (relay/PMU R2)",
+   "kind": "frequency_delta",
+   "sequence": false
+  },
+  "R2-PA:Z": {
+   "meaning": "Apparent impedance seen by the relay (relay/PMU R2)",
+   "kind": "impedance",
+   "sequence": false
+  },
+  "R2-PA:ZH": {
+   "meaning": "Apparent impedance angle seen by the relay (relay/PMU R2)",
+   "kind": "impedance_angle",
+   "sequence": false
+  },
+  "R2:S": {
+   "meaning": "Relay status flag (relay/PMU R2)",
+   "kind": "relay_status",
+   "sequence": false
+  },
+  "R3-PA1:VH": {
+   "meaning": "Phase A voltage phase angle (relay/PMU R3)",
+   "kind": "voltage_angle",
+   "sequence": false
+  },
+  "R3-PM1:V": {
+   "meaning": "Phase A voltage magnitude (relay/PMU R3)",
+   "kind": "voltage_magnitude",
+   "sequence": false
+  },
+  "R3-PA2:VH": {
+   "meaning": "Phase B voltage phase angle (relay/PMU R3)",
+   "kind": "voltage_angle",
+   "sequence": false
+  },
+  "R3-PM2:V": {
+   "meaning": "Phase B voltage magnitude (relay/PMU R3)",
+   "kind": "voltage_magnitude",
+   "sequence": false
+  },
+  "R3-PA3:VH": {
+   "meaning": "Phase C voltage phase angle (relay/PMU R3)",
+   "kind": "voltage_angle",
+   "sequence": false
+  },
+  "R3-PM3:V": {
+   "meaning": "Phase C voltage magnitude (relay/PMU R3)",
+   "kind": "voltage_magnitude",
+   "sequence": false
+  },
+  "R3-PA4:IH": {
+   "meaning": "Phase A current phase angle (relay/PMU R3)",
+   "kind": "current_angle",
+   "sequence": false
+  },
+  "R3-PM4:I": {
+   "meaning": "Phase A current magnitude (relay/PMU R3)",
+   "kind": "current_magnitude",
+   "sequence": false
+  },
+  "R3-PA5:IH": {
+   "meaning": "Phase B current phase angle (relay/PMU R3)",
+   "kind": "current_angle",
+   "sequence": false
+  },
+  "R3-PM5:I": {
+   "meaning": "Phase B current magnitude (relay/PMU R3)",
+   "kind": "current_magnitude",
+   "sequence": false
+  },
+  "R3-PA6:IH": {
+   "meaning": "Phase C current phase angle (relay/PMU R3)",
+   "kind": "current_angle",
+   "sequence": false
+  },
+  "R3-PM6:I": {
+   "meaning": "Phase C current magnitude (relay/PMU R3)",
+   "kind": "current_magnitude",
+   "sequence": false
+  },
+  "R3-PA7:VH": {
+   "meaning": "Positive-sequence voltage phase angle (relay/PMU R3)",
+   "kind": "voltage_angle",
+   "sequence": true
+  },
+  "R3-PM7:V": {
+   "meaning": "Positive-sequence voltage magnitude (relay/PMU R3)",
+   "kind": "voltage_magnitude",
+   "sequence": true
+  },
+  "R3-PA8:VH": {
+   "meaning": "Negative-sequence voltage phase angle (relay/PMU R3)",
+   "kind": "voltage_angle",
+   "sequence": true
+  },
+  "R3-PM8:V": {
+   "meaning": "Negative-sequence voltage magnitude (relay/PMU R3)",
+   "kind": "voltage_magnitude",
+   "sequence": true
+  },
+  "R3-PA9:VH": {
+   "meaning": "Zero-sequence voltage phase angle (relay/PMU R3)",
+   "kind": "voltage_angle",
+   "sequence": true
+  },
+  "R3-PM9:V": {
+   "meaning": "Zero-sequence voltage magnitude (relay/PMU R3)",
+   "kind": "voltage_magnitude",
+   "sequence": true
+  },
+  "R3-PA10:IH": {
+   "meaning": "Positive-sequence current phase angle (relay/PMU R3)",
+   "kind": "current_angle",
+   "sequence": true
+  },
+  "R3-PM10:I": {
+   "meaning": "Positive-sequence current magnitude (relay/PMU R3)",
+   "kind": "current_magnitude",
+   "sequence": true
+  },
+  "R3-PA11:IH": {
+   "meaning": "Negative-sequence current phase angle (relay/PMU R3)",
+   "kind": "current_angle",
+   "sequence": true
+  },
+  "R3-PM11:I": {
+   "meaning": "Negative-sequence current magnitude (relay/PMU R3)",
+   "kind": "current_magnitude",
+   "sequence": true
+  },
+  "R3-PA12:IH": {
+   "meaning": "Zero-sequence current phase angle (relay/PMU R3)",
+   "kind": "current_angle",
+   "sequence": true
+  },
+  "R3-PM12:I": {
+   "meaning": "Zero-sequence current magnitude (relay/PMU R3)",
+   "kind": "current_magnitude",
+   "sequence": true
+  },
+  "R3:F": {
+   "meaning": "Relay operating frequency (relay/PMU R3)",
+   "kind": "frequency",
+   "sequence": false
+  },
+  "R3:DF": {
+   "meaning": "Frequency deviation (delta) of the relay (relay/PMU R3)",
+   "kind": "frequency_delta",
+   "sequence": false
+  },
+  "R3-PA:Z": {
+   "meaning": "Apparent impedance seen by the relay (relay/PMU R3)",
+   "kind": "impedance",
+   "sequence": false
+  },
+  "R3-PA:ZH": {
+   "meaning": "Apparent impedance angle seen by the relay (relay/PMU R3)",
+   "kind": "impedance_angle",
+   "sequence": false
+  },
+  "R3:S": {
+   "meaning": "Relay status flag (relay/PMU R3)",
+   "kind": "relay_status",
+   "sequence": false
+  },
+  "R4-PA1:VH": {
+   "meaning": "Phase A voltage phase angle (relay/PMU R4)",
+   "kind": "voltage_angle",
+   "sequence": false
+  },
+  "R4-PM1:V": {
+   "meaning": "Phase A voltage magnitude (relay/PMU R4)",
+   "kind": "voltage_magnitude",
+   "sequence": false
+  },
+  "R4-PA2:VH": {
+   "meaning": "Phase B voltage phase angle (relay/PMU R4)",
+   "kind": "voltage_angle",
+   "sequence": false
+  },
+  "R4-PM2:V": {
+   "meaning": "Phase B voltage magnitude (relay/PMU R4)",
+   "kind": "voltage_magnitude",
+   "sequence": false
+  },
+  "R4-PA3:VH": {
+   "meaning": "Phase C voltage phase angle (relay/PMU R4)",
+   "kind": "voltage_angle",
+   "sequence": false
+  },
+  "R4-PM3:V": {
+   "meaning": "Phase C voltage magnitude (relay/PMU R4)",
+   "kind": "voltage_magnitude",
+   "sequence": false
+  },
+  "R4-PA4:IH": {
+   "meaning": "Phase A current phase angle (relay/PMU R4)",
+   "kind": "current_angle",
+   "sequence": false
+  },
+  "R4-PM4:I": {
+   "meaning": "Phase A current magnitude (relay/PMU R4)",
+   "kind": "current_magnitude",
+   "sequence": false
+  },
+  "R4-PA5:IH": {
+   "meaning": "Phase B current phase angle (relay/PMU R4)",
+   "kind": "current_angle",
+   "sequence": false
+  },
+  "R4-PM5:I": {
+   "meaning": "Phase B current magnitude (relay/PMU R4)",
+   "kind": "current_magnitude",
+   "sequence": false
+  },
+  "R4-PA6:IH": {
+   "meaning": "Phase C current phase angle (relay/PMU R4)",
+   "kind": "current_angle",
+   "sequence": false
+  },
+  "R4-PM6:I": {
+   "meaning": "Phase C current magnitude (relay/PMU R4)",
+   "kind": "current_magnitude",
+   "sequence": false
+  },
+  "R4-PA7:VH": {
+   "meaning": "Positive-sequence voltage phase angle (relay/PMU R4)",
+   "kind": "voltage_angle",
+   "sequence": true
+  },
+  "R4-PM7:V": {
+   "meaning": "Positive-sequence voltage magnitude (relay/PMU R4)",
+   "kind": "voltage_magnitude",
+   "sequence": true
+  },
+  "R4-PA8:VH": {
+   "meaning": "Negative-sequence voltage phase angle (relay/PMU R4)",
+   "kind": "voltage_angle",
+   "sequence": true
+  },
+  "R4-PM8:V": {
+   "meaning": "Negative-sequence voltage magnitude (relay/PMU R4)",
+   "kind": "voltage_magnitude",
+   "sequence": true
+  },
+  "R4-PA9:VH": {
+   "meaning": "Zero-sequence voltage phase angle (relay/PMU R4)",
+   "kind": "voltage_angle",
+   "sequence": true
+  },
+  "R4-PM9:V": {
+   "meaning": "Zero-sequence voltage magnitude (relay/PMU R4)",
+   "kind": "voltage_magnitude",
+   "sequence": true
+  },
+  "R4-PA10:IH": {
+   "meaning": "Positive-sequence current phase angle (relay/PMU R4)",
+   "kind": "current_angle",
+   "sequence": true
+  },
+  "R4-PM10:I": {
+   "meaning": "Positive-sequence current magnitude (relay/PMU R4)",
+   "kind": "current_magnitude",
+   "sequence": true
+  },
+  "R4-PA11:IH": {
+   "meaning": "Negative-sequence current phase angle (relay/PMU R4)",
+   "kind": "current_angle",
+   "sequence": true
+  },
+  "R4-PM11:I": {
+   "meaning": "Negative-sequence current magnitude (relay/PMU R4)",
+   "kind": "current_magnitude",
+   "sequence": true
+  },
+  "R4-PA12:IH": {
+   "meaning": "Zero-sequence current phase angle (relay/PMU R4)",
+   "kind": "current_angle",
+   "sequence": true
+  },
+  "R4-PM12:I": {
+   "meaning": "Zero-sequence current magnitude (relay/PMU R4)",
+   "kind": "current_magnitude",
+   "sequence": true
+  },
+  "R4:F": {
+   "meaning": "Relay operating frequency (relay/PMU R4)",
+   "kind": "frequency",
+   "sequence": false
+  },
+  "R4:DF": {
+   "meaning": "Frequency deviation (delta) of the relay (relay/PMU R4)",
+   "kind": "frequency_delta",
+   "sequence": false
+  },
+  "R4-PA:Z": {
+   "meaning": "Apparent impedance seen by the relay (relay/PMU R4)",
+   "kind": "impedance",
+   "sequence": false
+  },
+  "R4-PA:ZH": {
+   "meaning": "Apparent impedance angle seen by the relay (relay/PMU R4)",
+   "kind": "impedance_angle",
+   "sequence": false
+  },
+  "R4:S": {
+   "meaning": "Relay status flag (relay/PMU R4)",
+   "kind": "relay_status",
+   "sequence": false
+  },
+  "control_panel_log1": {
+   "meaning": "Control panel log field (PMU/relay R1)",
+   "kind": "control_panel_log",
+   "sequence": false
+  },
+  "control_panel_log2": {
+   "meaning": "Control panel log field (PMU/relay R2)",
+   "kind": "control_panel_log",
+   "sequence": false
+  },
+  "control_panel_log3": {
+   "meaning": "Control panel log field (PMU/relay R3)",
+   "kind": "control_panel_log",
+   "sequence": false
+  },
+  "control_panel_log4": {
+   "meaning": "Control panel log field (PMU/relay R4)",
+   "kind": "control_panel_log",
+   "sequence": false
+  },
+  "relay1_log": {
+   "meaning": "Relay log field (PMU/relay R1)",
+   "kind": "relay_log",
+   "sequence": false
+  },
+  "relay2_log": {
+   "meaning": "Relay log field (PMU/relay R2)",
+   "kind": "relay_log",
+   "sequence": false
+  },
+  "relay3_log": {
+   "meaning": "Relay log field (PMU/relay R3)",
+   "kind": "relay_log",
+   "sequence": false
+  },
+  "relay4_log": {
+   "meaning": "Relay log field (PMU/relay R4)",
+   "kind": "relay_log",
+   "sequence": false
+  },
+  "snort_log1": {
+   "meaning": "Snort alert field (PMU/relay R1)",
+   "kind": "snort_alert",
+   "sequence": false
+  },
+  "snort_log2": {
+   "meaning": "Snort alert field (PMU/relay R2)",
+   "kind": "snort_alert",
+   "sequence": false
+  },
+  "snort_log3": {
+   "meaning": "Snort alert field (PMU/relay R3)",
+   "kind": "snort_alert",
+   "sequence": false
+  },
+  "snort_log4": {
+   "meaning": "Snort alert field (PMU/relay R4)",
+   "kind": "snort_alert",
+   "sequence": false
+  }
+ }
+}

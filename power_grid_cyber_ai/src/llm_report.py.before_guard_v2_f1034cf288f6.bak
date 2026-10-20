@@ -1,0 +1,463 @@
+"""Evidence-grounded incident report for Attack / Fault predictions.
+
+build_evidence -> LLM text -> verify_report (numbers, rules, forbidden claims,
+section-level template replacement) -> assemble markdown + charts.
+Normal predictions never call the LLM. Decision-support only.
+"""
+from __future__ import annotations
+
+import json
+import logging
+import math
+import re
+from collections import OrderedDict
+from pathlib import Path
+
+try:
+    from . import report_prompts, report_charts
+except ImportError:
+    import report_prompts, report_charts
+
+_ROOT = Path(__file__).resolve().parents[1]
+
+
+def _load_config():
+    for mod in ("src.config", "config"):
+        try:
+            return __import__(mod, fromlist=["x"])
+        except Exception:
+            continue
+    return None
+
+
+_CFG = _load_config()
+
+
+def _cfg(name, default):
+    return getattr(_CFG, name, default) if _CFG is not None else default
+
+
+def settings():
+    return {
+        "CLASS_NORMAL": _cfg("CLASS_NORMAL", "Normal"),
+        "CLASS_FAULT": _cfg("CLASS_FAULT", "Fault"),
+        "CLASS_ATTACK": _cfg("CLASS_ATTACK", "Attack"),
+        "REPORT_LANG": _cfg("REPORT_LANG", "en"),
+        "LLM_MODEL_NAME": _cfg("LLM_MODEL_NAME", "Qwen/Qwen2.5-1.5B-Instruct"),
+        "LLM_FALLBACKS": list(_cfg("LLM_FALLBACKS", ["Qwen/Qwen2.5-0.5B-Instruct"])),
+        "LLM_MAX_NEW_TOKENS": _cfg("LLM_MAX_NEW_TOKENS", 450),
+        "REPORTS_DIR": Path(_cfg("REPORTS_DIR", _ROOT / "results" / "reports")),
+        "LOG_DIR": Path(_cfg("LOG_DIR", _ROOT / "logs")),
+        "BASELINE_PATH": Path(_cfg("BASELINE_PATH", _ROOT / "models" / "baseline_stats.json")),
+        "FEATURE_DICT_PATH": Path(_cfg("FEATURE_DICT_PATH", _ROOT / "src" / "feature_dictionary.json")),
+        "RELIABILITY_CSV": Path(_cfg("RELIABILITY_CSV", _ROOT / "results" / "classification_reports" / "random_forest.csv")),
+        "PACKET_FEATURES": _cfg("REPORT_PACKET_FEATURES", 20),
+        "TABLE_ROWS": _cfg("REPORT_TABLE_ROWS", 10),
+        "WEAK_Z": float(_cfg("WEAK_Z_THRESHOLD", 2.0)),
+        "LOW_RECALL": float(_cfg("LOW_RECALL_THRESHOLD", 0.5)),
+        "Z_CAP": float(_cfg("Z_CAP", 50.0)),
+    }
+
+
+def _logger():
+    s = settings()
+    lg = logging.getLogger("powergrid.report")
+    if not lg.handlers:
+        lg.setLevel(logging.INFO)
+        try:
+            s["LOG_DIR"].mkdir(parents=True, exist_ok=True)
+            h = logging.FileHandler(s["LOG_DIR"] / "report.log", encoding="utf-8")
+            h.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+            lg.addHandler(h)
+        except OSError:
+            lg.addHandler(logging.NullHandler())
+    return lg
+
+
+class LLMUnavailable(RuntimeError):
+    pass
+
+
+class BaselineMissing(FileNotFoundError):
+    pass
+
+
+_LLM = None
+
+
+def load_llm(force=False):
+    """Return run(messages)->str. Tries LLM_MODEL_NAME, then LLM_FALLBACKS."""
+    global _LLM
+    if _LLM is not None and not force:
+        return _LLM
+    s = settings()
+    try:
+        import torch
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+    except ImportError as exc:
+        raise LLMUnavailable(f"transformers/torch not installed: {exc}") from exc
+    errors = []
+    for name in [s["LLM_MODEL_NAME"], *s["LLM_FALLBACKS"]]:
+        try:
+            tok = AutoTokenizer.from_pretrained(name)
+            model = AutoModelForCausalLM.from_pretrained(name)
+            model.eval()
+
+            def run(messages, _tok=tok, _model=model):
+                prompt = _tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+                inputs = _tok(prompt, return_tensors="pt")
+                with torch.no_grad():
+                    out = _model.generate(**inputs, max_new_tokens=s["LLM_MAX_NEW_TOKENS"], do_sample=False)
+                return _tok.decode(out[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
+
+            run.model_name = name
+            _LLM = run
+            return run
+        except Exception as exc:  # noqa: BLE001
+            errors.append(f"{name}: {exc}")
+            _logger().warning("LLM load failed: %s", errors[-1])
+    raise LLMUnavailable("; ".join(errors))
+
+
+def _sig(x, n=4):
+    x = float(x)
+    if x == 0 or not math.isfinite(x):
+        return x
+    return float(f"{x:.{n}g}")
+
+
+def load_feature_dictionary():
+    return json.loads(settings()["FEATURE_DICT_PATH"].read_text(encoding="utf-8"))["features"]
+
+
+def load_baseline():
+    p = settings()["BASELINE_PATH"]
+    if not p.exists():
+        raise BaselineMissing(f"{p} not found - run: python tools/build_baseline.py")
+    return json.loads(p.read_text(encoding="utf-8"))
+
+
+def load_reliability(model_name="random_forest"):
+    import pandas as pd
+    df = pd.read_csv(settings()["RELIABILITY_CSV"], index_col=0)
+    s = settings()
+    per = OrderedDict()
+    for cls in (s["CLASS_NORMAL"], s["CLASS_FAULT"], s["CLASS_ATTACK"]):
+        if cls in df.index:
+            r = df.loc[cls]
+            per[cls] = {"precision": _sig(r["precision"]), "recall": _sig(r["recall"]),
+                        "precision_pct": round(float(r["precision"]) * 100, 1),
+                        "recall_pct": round(float(r["recall"]) * 100, 1),
+                        "support": int(r["support"])}
+    return {"model": model_name, "per_class": per}
+
+
+def build_evidence(record, prediction, baseline=None, reliability=None, dictionary=None, synthetic=False):
+    """record: {feature: imputed value}. prediction: predicted_class, probabilities (0-1),
+    risk_score (0-1), index, source."""
+    s = settings()
+    baseline = baseline or load_baseline()
+    reliability = reliability or load_reliability()
+    dictionary = dictionary or load_feature_dictionary()
+    stats = baseline["features"]
+    rows = []
+    for name, val in record.items():
+        st = stats.get(name)
+        if st is None or val is None:
+            continue
+        try:
+            v = float(val)
+        except (TypeError, ValueError):
+            continue
+        if not math.isfinite(v):
+            continue
+        mean, std = float(st["mean"]), float(st["std"])
+        z = (v - mean) / max(std, 1e-3)
+        capped = abs(z) > s["Z_CAP"]
+        z = max(-s["Z_CAP"], min(s["Z_CAP"], z))
+        info = dictionary.get(name, {"meaning": "undocumented feature", "kind": "unknown"})
+        rows.append({"feature": name, "meaning": info["meaning"], "kind": info["kind"],
+                     "value": _sig(v), "baseline_mean": _sig(mean), "baseline_std": _sig(std),
+                     "deviation": _sig(v - mean), "z": round(z, 2), "z_capped": capped})
+    rows.sort(key=lambda r: abs(r["z"]), reverse=True)
+    top = rows[: s["PACKET_FEATURES"]]
+    cls = prediction["predicted_class"]
+    fault_rel = reliability["per_class"].get(s["CLASS_FAULT"], {})
+    weak = bool(top[:5]) and all(abs(r["z"]) < s["WEAK_Z"] for r in top[:5])
+    low_rel = (cls == s["CLASS_FAULT"]) and fault_rel.get("recall", 1.0) < s["LOW_RECALL"]
+    return {
+        "record_id": f"{prediction.get('source', 'record')}#{prediction.get('index', 0)}",
+        "predicted_class": cls,
+        "probabilities_pct": {k: round(float(v) * 100, 1) for k, v in prediction["probabilities"].items()},
+        "risk_score_pct": round(float(prediction["risk_score"]) * 100, 1),
+        "weak_z_threshold": s["WEAK_Z"],
+        "evidence_weak": weak,
+        "low_recall_threshold_pct": round(s["LOW_RECALL"] * 100, 1),
+        "low_reliability_class": bool(low_rel),
+        "top_features": top,
+        "model_reliability": reliability,
+        "baseline_class": baseline.get("baseline_class", "Normal"),
+        "synthetic": bool(synthetic),
+    }
+
+
+SECTION_ORDER = ["Summary", "Key Evidence", "Interpretation", "Possible Impact",
+                 "Recommended Actions", "Confidence & Limitations"]
+LLM_SECTIONS = ["Summary", "Interpretation", "Possible Impact", "Recommended Actions",
+                "Confidence & Limitations"]
+
+
+def _other_class(cls):
+    s = settings()
+    return s["CLASS_FAULT"] if cls == s["CLASS_ATTACK"] else s["CLASS_ATTACK"]
+
+
+def template_sections(packet):
+    s = settings()
+    cls = packet["predicted_class"]
+    other = _other_class(cls)
+    pr = packet["probabilities_pct"]
+    top = packet["top_features"][:3]
+    fr = packet["model_reliability"]["per_class"].get(s["CLASS_FAULT"], {})
+    sec = OrderedDict()
+    second = f"The risk score is {packet['risk_score_pct']}%."
+    if packet["low_reliability_class"]:
+        second = f"The risk score is {packet['risk_score_pct']}%, and {cls} is a low-reliability class."
+    sec["Summary"] = f"The model classified this record as {cls} with probability {pr.get(cls)}%. {second}"
+    names = ", ".join(f"{f['feature']} (z = {f['z']})" for f in top) or "no feature"
+    weak = (" The evidence is weak and uncertain because none of the five largest deviations "
+            f"reaches |z| = {packet['weak_z_threshold']:g}.") if packet["evidence_weak"] else ""
+    nature = "manipulated measurements" if cls == s["CLASS_ATTACK"] else "a physical or electrical disturbance"
+    sec["Interpretation"] = (
+        f"The largest deviations from the {packet['baseline_class']} baseline are {names}. "
+        f"These patterns are consistent with, but do not prove, {nature}. "
+        f"The evidence does not clearly fit {other}: the model gives {other} a probability of {pr.get(other)}%.{weak}")
+    sec["Possible Impact"] = (
+        "If the deviations are real, the affected measurements may give operators an inaccurate picture "
+        "of the system state, so the result should be checked independently before any decision."
+        if cls == s["CLASS_ATTACK"] else
+        "If the deviations are real, the affected measurements point to abnormal operating conditions "
+        "that need engineering review before any decision.")
+    extra = ("Check whether neighbouring measurements show the same pattern." if cls == s["CLASS_ATTACK"]
+             else "Check whether the same pattern persists in consecutive records.")
+    sec["Recommended Actions"] = (
+        "1. Review the listed measurements with a qualified engineer.\n"
+        "2. Compare them with independent measurements from other devices, if available.\n"
+        f"3. {extra}\n"
+        "4. Treat this output as decision support only; do not act on it automatically.")
+    conf = ("The prediction comes from a model trained on historical or simulated data "
+            f"(evidence strength: {'weak and uncertain' if packet['evidence_weak'] else 'not weak'}).")
+    if packet["low_reliability_class"]:
+        conf += (f" Historical {s['CLASS_FAULT']} precision is {fr.get('precision_pct')}% and recall is "
+                 f"{fr.get('recall_pct')}% (support {fr.get('support')}), so this class is low-reliability.")
+    sec["Confidence & Limitations"] = conf
+    return sec
+
+
+def key_evidence_table(packet):
+    n = settings()["TABLE_ROWS"]
+    lines = ["| Feature | Meaning | Value | Baseline | Deviation |", "|---|---|---|---|---|"]
+    for f in packet["top_features"][:n]:
+        cap = " (capped)" if f["z_capped"] else ""
+        lines.append(f"| {f['feature']} | {f['meaning']} | {f['value']} | {f['baseline_mean']} | "
+                     f"{f['deviation']:+g} ({f['z']:+.2f}σ{cap}) |")
+    return "\n".join(lines)
+
+
+_HEAD = re.compile(r"^\s{0,3}#{1,4}\s*(?:\d+[.)]\s*)?(.+?)\s*#*\s*$", re.M)
+_CANON = [("key evidence", "Key Evidence"), ("summary", "Summary"), ("interpretation", "Interpretation"),
+          ("possible impact", "Possible Impact"), ("recommended action", "Recommended Actions"),
+          ("confidence", "Confidence & Limitations")]
+_FEATURE_TOKEN = re.compile(r"\bR\d(?:-P[AM]\d+)?:[A-Z]+\b|\b(?:control_panel_log|snort_log)\d\b|\brelay\d_log\b")
+_NUMBER = re.compile(r"(?<![A-Za-z_\d.])[-+]?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?")
+_LIST_ITEM = re.compile(r"^\s*\d+[.)]\s+", re.M)
+
+
+def parse_sections(text):
+    out = OrderedDict()
+    matches = list(_HEAD.finditer(text))
+    for i, m in enumerate(matches):
+        title = m.group(1).strip().lower().replace("**", "")
+        canon = next((c for k, c in _CANON if title.startswith(k)), None)
+        if canon and canon not in out:
+            end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+            out[canon] = text[m.end():end].strip()
+    return out
+
+
+def _numeric_leaves(obj, acc):
+    if isinstance(obj, bool):
+        return
+    if isinstance(obj, (int, float)):
+        if math.isfinite(obj):
+            acc.add(abs(float(obj)))
+    elif isinstance(obj, dict):
+        for v in obj.values():
+            _numeric_leaves(v, acc)
+    elif isinstance(obj, (list, tuple)):
+        for v in obj:
+            _numeric_leaves(v, acc)
+
+
+def packet_numbers(packet):
+    s = settings()
+    acc = set()
+    _numeric_leaves({k: v for k, v in packet.items() if k != "record_id"}, acc)
+    acc |= {s["WEAK_Z"], s["LOW_RECALL"], 5.0, s["LOW_RECALL"] * 100}
+    return acc | {round(v * 100, 6) for v in acc if v <= 1}
+
+
+def _close(a, b):
+    return a == b or abs(a - b) <= 0.01 * max(abs(a), abs(b))
+
+
+def _clean_for_numbers(text, packet):
+    t = _LIST_ITEM.sub("", text)
+    for n in sorted((f["feature"] for f in packet["top_features"]), key=len, reverse=True):
+        t = t.replace(n, " FEATURE ")
+    return _FEATURE_TOKEN.sub(" FEATURE ", t)
+
+
+def _numbers_in(text, packet):
+    out = []
+    for tok in _NUMBER.findall(_clean_for_numbers(text, packet)):
+        try:
+            out.append(abs(float(tok)))
+        except ValueError:
+            pass
+    return out
+
+
+def unsupported_numbers(text, packet):
+    allowed = packet_numbers(packet)
+    return [v for v in _numbers_in(text, packet) if not any(_close(v, a) for a in allowed)]
+
+
+def unknown_features(text, packet):
+    known = {f["feature"] for f in packet["top_features"]}
+    return sorted({m for m in _FEATURE_TOKEN.findall(text) if m not in known})
+
+
+def forbidden_claims(text, packet):
+    """current / logs / alerts / commands are allowed only if the packet supports them."""
+    kinds = {f["kind"] for f in packet["top_features"]}
+    meaning_blob = " ".join(f["meaning"].lower() for f in packet["top_features"])
+    t = _FEATURE_TOKEN.sub(" ", text)
+    rules = {
+        "current": (r"\bcurrents?\b", {"current_angle", "current_magnitude"}),
+        "logs": (r"\blogs?\b|\blogging\b|\blogged\b", {"control_panel_log", "relay_log", "snort_alert"}),
+        "alerts": (r"\balerts?\b|\bsnort\b|\bIDS\b", {"snort_alert"}),
+        "commands": (r"\bcommands?\b|\btrip(?:s|ped|ping)?\b", set()),
+    }
+    hits = []
+    for topic, (pattern, needed) in rules.items():
+        if re.search(pattern, t, re.I):
+            if not (kinds & needed or (topic == "commands" and "command" in meaning_blob)):
+                hits.append(topic)
+    return hits
+
+
+def verify_report(text, packet):
+    """-> (OrderedDict of the 5 LLM sections, notes). Failing sections are replaced by the template."""
+    s = settings()
+    tpl = template_sections(packet)
+    parsed = parse_sections(text or "")
+    notes, out = [], OrderedDict()
+    other = _other_class(packet["predicted_class"])
+
+    def replace(name, note):
+        out[name] = tpl[name]
+        if note not in notes:
+            notes.append(note)
+
+    for name in LLM_SECTIONS:
+        body = (parsed.get(name) or "").replace(report_prompts.DISCLAIMER, "").strip()
+        if not body:
+            replace(name, f"auto-corrected: missing section ({name})")
+        elif unsupported_numbers(body, packet):
+            replace(name, "auto-corrected: unsupported number")
+        elif unknown_features(body, packet):
+            replace(name, "auto-corrected: unsupported claim (feature not in packet)")
+        elif forbidden_claims(body, packet):
+            replace(name, f"auto-corrected: unsupported claim ({', '.join(forbidden_claims(body, packet))})")
+        else:
+            out[name] = body
+
+    if len(re.findall(r"[.!?](?:\s|$)", out["Summary"])) > 2:
+        replace("Summary", "auto-corrected: summary must be 2 sentences")
+    if not 3 <= len(_LIST_ITEM.findall(out["Recommended Actions"])) <= 5:
+        replace("Recommended Actions", "auto-corrected: recommended actions must be 3-5 numbered items")
+    if other.lower() not in out["Interpretation"].lower():
+        replace("Interpretation", "auto-corrected: missing explanation of why the evidence does not fit the other class")
+
+    if packet["evidence_weak"]:
+        blob = " ".join(out.values()).lower()
+        if "weak" not in blob and "uncertain" not in blob:
+            replace("Confidence & Limitations", "auto-corrected: weak-evidence statement missing")
+
+    if packet["low_reliability_class"]:
+        fr = packet["model_reliability"]["per_class"][s["CLASS_FAULT"]]
+        if "low-reliability class" not in out["Summary"].lower():
+            replace("Summary", "auto-corrected: 'low-reliability class' missing in Summary")
+        conf = out["Confidence & Limitations"]
+        nums = _numbers_in(conf, packet)
+        if not (any(_close(n, fr["precision_pct"]) for n in nums)
+                and any(_close(n, fr["recall_pct"]) for n in nums) and "low" in conf.lower()):
+            replace("Confidence & Limitations", "auto-corrected: Fault precision/recall statement missing")
+    return out, notes
+
+
+def assemble_markdown(packet, sections, notes, generator):
+    head = [f"# Incident Report - {packet['predicted_class']}", "",
+            f"- Record: {packet['record_id']}", f"- Generated by: {generator}"]
+    if packet["synthetic"]:
+        head.append("- **SYNTHETIC RUN** (not computed from the real models/baseline)")
+    head += [f"- {n}" for n in notes]
+    parts = ["\n".join(head), ""]
+    for i, name in enumerate(SECTION_ORDER, start=1):
+        parts += [f"## {i}. {name}", key_evidence_table(packet) if name == "Key Evidence" else sections[name], ""]
+    parts.append(f"_{report_prompts.DISCLAIMER}_")
+    return "\n".join(parts)
+
+
+def generate_report(record, prediction, llm=None, save=True, synthetic=False,
+                    baseline=None, reliability=None, dictionary=None):
+    """Normal -> {'status': 'skipped_normal'} and the LLM is never touched."""
+    s = settings()
+    lg = _logger()
+    cls = prediction["predicted_class"]
+    if cls == s["CLASS_NORMAL"]:
+        return {"status": "skipped_normal", "markdown": None, "charts": [], "notes": []}
+
+    packet = build_evidence(record, prediction, baseline, reliability, dictionary, synthetic)
+    notes, text = [], ""
+    try:
+        runner = llm if llm is not None else load_llm()
+        text = runner(report_prompts.build_messages(packet))
+        generator = f"LLM {getattr(runner, 'model_name', 'custom')} + automatic verification"
+        sections, vnotes = verify_report(text, packet)
+    except Exception as exc:  # noqa: BLE001 - any LLM problem -> template report
+        lg.warning("LLM failed, using template: %s", exc)
+        generator = "template (no LLM)"
+        notes.append(f"template fallback: LLM unavailable ({type(exc).__name__})")
+        sections, vnotes = OrderedDict(template_sections(packet)), []
+    notes += vnotes
+
+    lang_warning = s["REPORT_LANG"] != "en"
+    if lang_warning:
+        notes.append("language note: report generated in English (the small LLM is weak in Arabic)")
+
+    md = assemble_markdown(packet, sections, notes, generator)
+    charts, md_path = [], None
+    if save:
+        base = f"report_{prediction.get('index', 0)}_{cls}"
+        s["REPORTS_DIR"].mkdir(parents=True, exist_ok=True)
+        charts = [report_charts.probability_chart(packet, s["REPORTS_DIR"] / f"{base}_probs.png"),
+                  report_charts.feature_chart(packet, s["REPORTS_DIR"] / f"{base}_features.png", top_n=s["TABLE_ROWS"])]
+        md_path = s["REPORTS_DIR"] / f"{base}.md"
+        md_path.write_text(md, encoding="utf-8")
+    lg.info("report %s class=%s generator=%s notes=%s", packet["record_id"], cls, generator, notes)
+    return {"status": "template_fallback" if generator.startswith("template") else "llm",
+            "markdown": md, "packet": packet, "charts": charts, "notes": notes,
+            "md_path": str(md_path) if md_path else None, "lang_warning": lang_warning,
+            "synthetic": synthetic, "raw_llm_text": text}
