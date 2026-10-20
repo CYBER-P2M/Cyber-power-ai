@@ -1,0 +1,5 @@
+ultralytics>=8.2.0
+opencv-python-headless
+pillow
+python-dateutil
+# easyocr

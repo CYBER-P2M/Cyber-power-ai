@@ -1,0 +1,5 @@
+# add to requirements.txt (matplotlib is already there)
+transformers>=4.45
+accelerate>=0.34
+torch
+# lower bounds only: pin exact versions with `pip freeze` after tools/test_report.py passes on your machine

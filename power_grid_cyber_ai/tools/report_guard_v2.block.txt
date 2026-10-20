@@ -1,0 +1,98 @@
+# REPORT_GUARD_V2_BEGIN
+# This block is installed at the end of src/llm_report.py.
+_guard_v1_verify_report = verify_report
+_guard_v1_template_sections = template_sections
+
+def _guard_number(value):
+    import math
+    try:
+        v = float(value)
+        return f"{v:g}" if math.isfinite(v) else "unavailable"
+    except (TypeError, ValueError):
+        return "unavailable"
+
+
+def template_sections(packet):
+    """Deterministic safety-critical prose; values only from this packet."""
+    sec = _guard_v1_template_sections(packet)
+    cls = packet["predicted_class"]
+    probs = packet.get("probabilities_pct", {})
+    other = "Fault" if cls == "Attack" else "Attack"
+    low = bool(packet.get("low_reliability_class"))
+    qualifier = ", a low-reliability class," if low else ""
+    sec["Summary"] = (
+        f"The classifier predicts {cls}{qualifier} with model probability "
+        f"{_guard_number(probs.get(cls))}%. "
+        f"The Non-Normal Score (defined as one minus the Normal probability) is "
+        f"{_guard_number(packet.get('risk_score_pct'))}%, not a calibrated probability of damage or attack."
+    )
+    feats = packet.get("top_features", [])
+    evidence = "; ".join(
+        f"{f['feature']} (z = {_guard_number(f.get('z'))})" for f in feats[:3]
+    ) or "no usable baseline deviations"
+    weakness = (
+        " Evidence is weak/uncertain under the configured baseline-deviation rule."
+        if packet.get("evidence_weak") or not feats else
+        " Baseline deviations alone do not identify the cause."
+    )
+    sec["Interpretation"] = (
+        f"The largest listed deviations from the baseline are {evidence}. "
+        f"The classifier assigns {cls} {_guard_number(probs.get(cls))}% and "
+        f"{other} {_guard_number(probs.get(other))}%. "
+        "This preference is not independent evidence that excludes the alternative class. "
+        "The packet does not establish whether the cause is malicious manipulation or a physical disturbance."
+        + weakness
+    )
+    sec["Possible Impact"] = (
+        "These deviations warrant review of the represented measurements. "
+        "Their operational significance cannot be determined from this packet alone; "
+        "equipment damage, service interruption, and security-control bypass are not established."
+    )
+    sec["Recommended Actions"] = (
+        "1. Have a qualified engineer review the listed measurements and preprocessing.\n"
+        "2. Compare with independent measurements, if available; their availability is not established here.\n"
+        "3. Review the classifier's class-specific evaluation and baseline provenance before relying on this result.\n"
+        "4. Do not initiate automated operational actions from this report."
+    )
+    per = packet.get("model_reliability", {}).get("per_class", {})
+    metrics = per.get(cls, {})
+    p, r = metrics.get("precision_pct"), metrics.get("recall_pct")
+    if p is not None and r is not None:
+        reliability = (
+            f"Historical {cls} precision is {_guard_number(p)}% and recall is {_guard_number(r)}%. "
+            "These aggregate metrics do not certify this individual prediction; "
+            "the evaluation split's provenance must be checked."
+        )
+    else:
+        reliability = f"Historical precision/recall for {cls} are unavailable in the packet."
+    if low:
+        fr = per.get("Fault", {})
+        reliability = (
+            f"Historical Fault precision/recall are low: precision "
+            f"{_guard_number(fr.get('precision_pct'))}% and recall "
+            f"{_guard_number(fr.get('recall_pct'))}%; Fault is a low-reliability class. "
+            "The evaluation split's provenance must be checked."
+        )
+    strength = (
+        "Evidence is weak/uncertain. " if packet.get("evidence_weak") or not feats
+        else "Deviation magnitude is not proof of an attack or of prediction correctness. "
+    )
+    sec["Confidence & Limitations"] = strength + reliability
+    return sec
+
+
+def verify_report(text, packet):
+    """Keep v1 numeric/claim validation, then enforce grounded final prose.
+
+    Deliberate conservative policy: all narrative sections are code-built.
+    LLM output remains a draft, not an authoritative engineering explanation.
+    This is not a claim of general-purpose semantic hallucination detection.
+    """
+    _, notes = _guard_v1_verify_report(text, packet)
+    safe = template_sections(packet)
+    note = "guard-v2: final narrative uses packet-grounded templates; LLM draft is not relied upon"
+    notes = list(notes)
+    if note not in notes:
+        notes.append(note)
+    return safe, notes
+# REPORT_GUARD_V2_END
